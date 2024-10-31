@@ -14,6 +14,54 @@ tags:
   - name: CRUD User
     description: CRUD User API
 paths:
+  /api/v1/register:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 201
+                message: "Success"
+                data: {
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+                  user_id: "cecdbb23-a7e0-4ddf-917a-0794f675269b",
+                  username: "name",
+                  level: "User"
+                }
+        '400':
+          description: Invalid email format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 400
+                message: "Invalid email format"
+                data: {}
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 409
+                message: "Email already registered"
+                data: {}
   /api/v1/login:
     post:
       tags:
@@ -304,6 +352,18 @@ components:
           example: Success
         data: 
           type: object
+    RegisterRequest:
+      type: object
+      properties:
+        username: 
+          type: string
+          example: fumui
+        email: 
+          type: string
+          example: fumui@epublib.co.id
+        password:
+          type: string
+          example: 43569uyjiztljo
     LoginRequest:
       type: object
       properties:

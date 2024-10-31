@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	epublib "epublib"
 	"epublib/postgres"
+	"epublib/util"
 	"net/http"
 	"strconv"
 	"time"
@@ -67,6 +68,107 @@ func (api *API) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	// Send the response
 	api.httpGeneralWrite(http.StatusOK, "Success", response, w)
+}
+
+type RegisterRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
+func (api *API) handleRegister(w http.ResponseWriter, r *http.Request) {
+	// Parse the JSON request body into a RegisterRequest struct
+	ctx := r.Context()
+	var payload RegisterRequest
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		api.httpGeneralWrite(http.StatusBadRequest, "Invalid JSON payload", nil, w)
+		return
+	}
+
+	// Validate the required fields
+	if payload.Username == "" {
+		api.httpGeneralWrite(http.StatusBadRequest, "Username is required field", nil, w)
+		return
+	}
+	if payload.Password == "" {
+		api.httpGeneralWrite(http.StatusBadRequest, "Password is required field", nil, w)
+		return
+	}
+	if payload.Email == "" {
+		api.httpGeneralWrite(http.StatusBadRequest, "Email is required field", nil, w)
+		return
+	}
+	if !util.IsValidEmail(payload.Email) {
+		api.httpGeneralWrite(http.StatusBadRequest, "Invalid email", nil, w)
+		return
+	}
+
+	// Check if the email is already registered
+	_, err = api.AuthService.FindAuthByEmail(r.Context(), payload.Email)
+	if err == nil {
+		api.httpGeneralWrite(http.StatusConflict, "Email is already registered", nil, w)
+		return
+	}
+
+	//Begin transaction
+	ctx, err = postgres.BeginTx(ctx, api.db)
+	if err != nil {
+		api.httpGeneralWrite(http.StatusInternalServerError, err.Error(), nil, w)
+		return
+	}
+	defer postgres.Rollback(ctx)
+
+	// Create the user using the service
+	user := epublib.User{
+		Name:        payload.Username,
+		Address:     "",
+		PhoneNumber: "",
+		Gender:      epublib.UnidentifiedGender,
+		BirthDate:   time.Now(),
+		ImgProfile:  "",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+	err = api.UserService.CreateUser(ctx, &user)
+	if err != nil {
+		api.httpGeneralWrite(http.StatusInternalServerError, err.Error(), nil, w)
+		return
+	}
+
+	// Create the auth using the service
+	auth := epublib.Auth{
+		UserID:   user.ID,
+		Username: payload.Username,
+		Password: payload.Password,
+		Email:    payload.Email,
+		Level:    epublib.UserLevel,
+	}
+	err = api.AuthService.CreateAuth(ctx, &auth)
+	if err != nil {
+		api.httpGeneralWrite(http.StatusInternalServerError, err.Error(), nil, w)
+		return
+	}
+
+	err = postgres.Commit(ctx)
+	if err != nil {
+		api.httpGeneralWrite(http.StatusInternalServerError, err.Error(), nil, w)
+		return
+	}
+
+	response := &LoginResponseData{
+		UserID:   user.ID,
+		Username: auth.Username,
+		Level:    auth.Level.String(),
+	}
+	response.Token, err = createJWT(auth.UserID, 24*time.Hour)
+	if err != nil {
+		api.httpGeneralWrite(http.StatusInternalServerError, err.Error(), nil, w)
+		return
+	}
+
+	// Send the response
+	api.httpGeneralWrite(http.StatusCreated, "User registered successfully", response, w)
 }
 
 type CreateUserRequest struct {

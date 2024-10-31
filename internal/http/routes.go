@@ -19,6 +19,7 @@ func (api *API) Register() {
 		r := router.PathPrefix("/").Subrouter()
 		r.Use(api.handleCors)
 		r.Use(api.requireNoAuth)
+		r.HandleFunc("/register", api.handleRegister).Methods("POST")
 		r.HandleFunc("/login", api.handleLogin).Methods("POST")
 		r.HandleFunc("/reset-password/request", api.handleResetPasswordRequest).Methods("POST")
 		r.HandleFunc("/reset-password/validate", api.handleValidateResetToken).Methods("POST")
