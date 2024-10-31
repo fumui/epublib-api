@@ -1,0 +1,397 @@
+openapi: 3.0.3
+info:
+  title: Swagger Epublib - OpenAPI 3.0
+  description: |-
+    Swagger 3.0 Documentation of Chemons APIs Endpoint
+  contact:
+    email: fuad.mustamirrul@gmail.com
+  version: 1.0.11
+tags:
+  - name: Authentication
+    description: Authentication API
+  - name: Reset Password
+    description: Reset Password API
+  - name: CRUD User
+    description: CRUD User API
+paths:
+  /api/v1/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 200
+                message: "Success"
+                data: {
+                  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c,
+                  user_id: cecdbb23-a7e0-4ddf-917a-0794f675269b,
+                  username: superadmin,
+                  level: "Super Admin"
+                }
+        '400':
+          description: Invalid email format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 400
+                message: "Invalid email format"
+                data: {}
+        '401':
+          description: Incorrect email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 401
+                message: "Incorrect email or password"
+                data: {}
+  /api/v1/reset-password/request:
+    post:
+      tags:
+        - Reset Password
+      summary: Request Reset Password Email
+      operationId: resetPasswordRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 200
+                message: "Success"
+                data: {}
+        '400':
+          description: Invalid email format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 400
+                message: "Invalid email format"
+                data: {}
+  /api/v1/reset-password/validate:
+    post:
+      tags:
+        - Reset Password
+      summary: Request Reset Password Email
+      operationId: resetPasswordValidate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateResetTokenRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 200
+                message: "Success"
+                data: {}
+        '401':
+          description: Invalid reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 400
+                message: "Invalid reset token"
+                data: {}
+  /api/v1/reset-password:
+    post:
+      tags:
+        - Reset Password
+      summary: Reset Password
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 200
+                message: "Success"
+                data: {}
+        '401':
+          description: Invalid reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericResponse'
+              example:
+                status: 400
+                message: "Invalid reset token"
+                data: {}
+  /api/v1/users:
+    get:
+      security:
+        - BearerAuth: []
+      tags:
+        - CRUD User
+      summary: Retrieve a list of users
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter users by name
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: Number of items to skip
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Number of items to retrieve
+        - in: query
+          name: include_deleted
+          schema:
+            type: boolean
+          description: Toggle include deleted item
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      security:
+        - BearerAuth: []
+      tags:
+        - CRUD User
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /api/v1/users/{id}:
+    get:
+      security:
+        - BearerAuth: []
+      tags:
+        - CRUD User
+      summary: Retrieve a user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '200':
+          description: A user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+    put:
+      security:
+        - BearerAuth: []
+      tags:
+        - CRUD User
+      summary: Update a user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: User ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+    delete:
+      security:
+        - BearerAuth: []
+      tags:
+        - CRUD User
+      summary: Delete a user by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: User ID
+      responses:
+        '204':
+          description: User deleted successfully
+        '404':
+          description: User not found
+components:
+  schemas:
+    GenericResponse:
+      required:
+        - status
+        - message
+      type: object
+      properties:
+        status: 
+          type: integer
+          example: 200
+        message: 
+          type: string
+          example: Success
+        data: 
+          type: object
+    LoginRequest:
+      type: object
+      properties:
+        email: 
+          type: string
+          example: superadmin@epublib.co.id
+        password: 
+          type: string
+          example: superadmin
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        phone_number:
+          type: string
+        gender:
+          type: string
+          enum: ["M", "F"]
+        birth_date:
+          type: string
+          format: date-time
+        img_profile:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+    CreateUser:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        level:
+          type: string
+          enum: ["Super Admin","Admin","Purchasing","Finance","Gudang","Operator"]
+    UpdateUser:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone_number:
+          type: string
+        gender:
+          type: string
+          enum: ["M", "F"]
+        birth_date:
+          type: string
+          format: date-time
+        img_profile:
+          type: string
+    ResetPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+    ValidateResetTokenRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        token:
+          type: string
+    ResetPassword:
+      type: object
+      properties:
+        id:
+          type: string
+        token:
+          type: string
+        password:
+          type: string
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

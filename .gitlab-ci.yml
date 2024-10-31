@@ -1,0 +1,64 @@
+stages:
+  - build
+  - deploy
+
+build:
+  # Use the official docker image
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - echo $IMAGE_REPO_TOKEN | docker login -u $IMAGE_REPO_USER --password-stdin 
+  # Default branch leaves tag empty (= latest tag)
+  # All other branches are tagged with the escaped branch name (commit ref slug)
+  script:
+    - mv sample.env .env
+    - docker compose build api
+    - docker compose push api
+deploy-staging:
+  # Use the official docker image
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+    - echo $IMAGE_REPO_TOKEN | docker login -u $IMAGE_REPO_USER --password-stdin
+    - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - chmod 400 "$SSH_PRIVATE_KEY"
+    - ssh-add "$SSH_PRIVATE_KEY"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  # Default branch leaves tag empty (= latest tag)
+  # All other branches are tagged with the escaped branch name (commit ref slug)
+  script:
+    - ssh epublib@34.128.104.179 docker compose pull api
+    - ssh epublib@34.128.104.179 docker compose up -d api
+  rules:
+    - if: $CI_COMMIT_BRANCH =~ $CI_DEFAULT_BRANCH
+deploy-prod:
+  # Use the official docker image
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+    - echo $IMAGE_REPO_TOKEN | docker login -u $IMAGE_REPO_USER --password-stdin
+    - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - chmod 400 "$SSH_PRIVATE_KEY"
+    - ssh-add "$SSH_PRIVATE_KEY"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  # Default branch leaves tag empty (= latest tag)
+  # All other branches are tagged with the escaped branch name (commit ref slug)
+  script:
+    - ssh epublib@103.52.115.70 docker compose pull api
+    - ssh epublib@103.52.115.70 docker compose up -d api
+  rules:
+    - if: $CI_COMMIT_BRANCH == "prod"

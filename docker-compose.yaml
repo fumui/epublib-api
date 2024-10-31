@@ -1,0 +1,36 @@
+version: '3.1'
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      PGDATA: /data
+    command: postgres
+    ports:
+      - ${DB_PORT}:5432
+  api:
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_PORT: ${DB_PORT}
+    image: fumui/epublib:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./postgres/migrations:/migrations
+    command: -path=/migrations/ -database postgres://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}?sslmode=disable up
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
